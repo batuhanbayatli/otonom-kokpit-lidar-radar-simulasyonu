@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Şehir İçi Otonom Kokpit: LiDAR vs RADAR | Batuhan Bayatlı</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600;700&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --bg: #030712;
+      --border: #334155;
+      --lidar: #00f2fe;
+      --radar: #10b981;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      user-select: none;
+    }
+
+    /* Üst Bilgi Barı */
+    header {
+      background: #090d16;
+      border-bottom: 1px solid #1e293b;
+      padding: 6px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 100;
+      flex-shrink: 0;
+    }
+
+    .brand { display: flex; align-items: center; gap: 8px; }
+    .brand-badge {
+      background: linear-gradient(135deg, #0284c7, #10b981);
+      color: #fff;
+      font-weight: 800;
+      font-size: 11px;
+      padding: 3px 6px;
+      border-radius: 4px;
+    }
+    .brand-title h1 { font-size: 13px; font-weight: 700; }
+
+    .dev-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: #1e293b;
+      border: 1px solid var(--border);
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 600;
+      color: #cbd5e1;
+      text-decoration: none;
+    }
+
+    /* Ana Görünüm */
+    .viewport-stage {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+    }
+
+    #threeCanvas { width: 100%; height: 100%; display: block; }
+
+    /* Ön Cam Yağmuru */
+    #rainCanvas {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    /* Ön Konsola Entegre Telemetri & Sensör Ekranları */
+    .cockpit-dash-overlay {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 220px;
+      background: linear-gradient(to top, #020617 80%, rgba(2, 6, 23, 0.4) 95%, transparent 100%);
+      border-top: 1px solid #1e293b;
+      z-index: 25;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      padding: 10px 24px 14px 24px;
+      pointer-events: none;
+    }
+
+    .hud-screen {
+      width: 330px;
+      height: 195px;
+      background: #040812;
+      border: 2px solid #1e293b;
+      border-radius: 10px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.9), inset 0 0 15px rgba(0, 0, 0, 0.8);
+      pointer-events: auto;
+    }
+    .screen-lidar { border-color: rgba(0, 242, 254, 0.4); }
+    .screen-radar { border-color: rgba(16, 185, 129, 0.4); }
+
+    .screen-header {
+      padding: 5px 10px;
+      font-size: 10.5px;
+      font-weight: 700;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .header-lidar { background: rgba(0, 242, 254, 0.1); color: var(--lidar); }
+    .header-radar { background: rgba(16, 185, 129, 0.1); color: var(--radar); }
+
+    .screen-canvas-box { flex: 1; position: relative; background: #02050b; }
+    .screen-canvas-box canvas { width: 100%; height: 100%; display: block; }
+
+    .screen-footer {
+      padding: 4px 10px;
+      background: rgba(0, 0, 0, 0.6);
+      font-family: 'Fira Code', monospace;
+      font-size: 9.5px;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    /* Orta Gösterge Paneli */
+    .center-cluster {
+      background: rgba(15, 23, 42, 0.9);
+      border: 2px solid #334155;
+      border-radius: 12px;
+      padding: 8px 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 240px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.9);
+      pointer-events: auto;
+    }
+
+    .speed-row { display: flex; align-items: baseline; gap: 6px; }
+    .speed-num {
+      font-family: 'Fira Code', monospace;
+      font-size: 38px;
+      font-weight: 800;
+      color: #fff;
+      line-height: 1;
+    }
+    .speed-lbl { font-size: 10px; font-weight: 700; color: var(--muted); }
+
+    .gear-row {
+      display: flex;
+      gap: 12px;
+      margin-top: 4px;
+      font-family: 'Fira Code', monospace;
+      font-size: 11px;
+      font-weight: 700;
+    }
+    .gear-item { color: #475569; }
+    .gear-item.active { color: #38bdf8; border-bottom: 2px solid #38bdf8; }
+
+    .rpm-container {
+      width: 100%;
+      margin-top: 6px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .rpm-bar {
+      width: 100%;
+      height: 5px;
+      background: #1e293b;
+      border-radius: 3px;
+      overflow: hidden;
+    }
+    .rpm-fill {
+      height: 100%;
+      width: 35%;
+      background: linear-gradient(to right, #0284c7, #38bdf8, #ef4444);
+      transition: width 0.15s ease-out;
+    }
+    .rpm-text {
+      font-family: 'Fira Code', monospace;
+      font-size: 9px;
+      color: var(--muted);
+      text-align: right;
+    }
+  </style>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+
+  <header>
+    <div class="brand">
+      <div class="brand-badge">CITY-LAB</div>
+      <div class="brand-title">
+        <h1>Şehir İçi Otonom Sürüş: LiDAR vs RADAR Füzyon Laboratuvarı</h1>
+      </div>
+    </div>
+    <a href="https://www.linkedin.com/in/batuhanbayatlı" target="_blank" class="dev-badge">
+      <span>👨‍💻 Batuhan Bayatlı</span>
+    </a>
+  </header>
+
+  <div class="viewport-stage">
+    <canvas id="threeCanvas"></canvas>
+    <canvas id="rainCanvas"></canvas>
+
+    <!-- Ön Konsol ve Ekranlar -->
+    <div class="cockpit-dash-overlay">
+      
+      <!-- LiDAR HUD -->
+      <div class="hud-screen screen-lidar">
+        <div class="screen-header header-lidar">
+          <span>🛰️ LIDAR (905 nm Işık Demeti)</span>
+          <span style="color: #f59e0b;">SİS / YAĞMUR SAÇILIMI</span>
+        </div>
+        <div class="screen-canvas-box">
+          <canvas id="lidarCanvas"></canvas>
+        </div>
+        <div class="screen-footer">
+          <span>MENZİL: <b style="color: var(--lidar);">~30 m</b></span>
+          <span>BİNA/DETAY: <b style="color: #38bdf8;">Tam Nokta Bulutu</b></span>
+        </div>
+      </div>
+
+      <!-- Orta Gösterge -->
+      <div class="center-cluster">
+        <div class="speed-row">
+          <span class="speed-num" id="speedNum">48</span>
+          <span class="speed-lbl">KM / S</span>
+        </div>
+        <div class="gear-row">
+          <span class="gear-item">P</span>
+          <span class="gear-item">R</span>
+          <span class="gear-item">N</span>
+          <span class="gear-item active" id="gearIndicator">D3</span>
+          <span class="gear-item">S</span>
+        </div>
+        <div class="rpm-container">
+          <div class="rpm-bar"><div class="rpm-fill" id="rpmFill"></div></div>
+          <div class="rpm-text"><span id="rpmNum">1950</span> RPM</div>
+        </div>
+      </div>
+
+      <!-- RADAR HUD -->
+      <div class="hud-screen screen-radar">
+        <div class="screen-header header-radar">
+          <span>📡 RADAR (77 GHz Milimetrik Dalga)</span>
+          <span style="color: #4ade80;">SİSİ DELER (KAYIPSIZ)</span>
+        </div>
+        <div class="screen-canvas-box">
+          <canvas id="radarCanvas"></canvas>
+        </div>
+        <div class="screen-footer">
+          <span>MENZİL: <b style="color: var(--radar);">120+ m</b></span>
+          <span>HEDEF: <b style="color: #4ade80;" id="radarLead">Takipte (-2 km/s)</b></span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    // ========================================================
+    // 1. THREE.JS: ŞEHİR BULVARI & GERÇEK 3D KOKPİT
+    // ========================================================
+    const canvas = document.getElementById('threeCanvas');
+    const scene = new THREE.Scene();
+
+    scene.background = new THREE.Color(0x060913);
+    scene.fog = new THREE.FogExp2(0x060913, 0.028);
+
+    const camera = new THREE.PerspectiveCamera(54, window.innerWidth / window.innerHeight, 0.1, 250);
+    // Sürücü Koltuğu: Direksiyonun tam karşısı (x = -0.42, y = 1.22, z = 0.55)
+    camera.position.set(-0.42, 1.22, 0.55);
+    camera.lookAt(-0.15, 1.15, -25);
+
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+    scene.add(new THREE.AmbientLight(0x1e293b, 1.3));
+
+    // Şehir Sokak Farları
+    const cityLight = new THREE.DirectionalLight(0x38bdf8, 0.5);
+    cityLight.position.set(0, 20, -10);
+    scene.add(cityLight);
+
+    // Aracımızın Farları
+    const headlight = new THREE.SpotLight(0xfffbeb, 4, 45, Math.PI / 5, 0.4);
+    headlight.position.set(0, 0.7, -0.2);
+    headlight.target.position.set(0, 0, -30);
+    scene.add(headlight);
+    scene.add(headlight.target);
+
+    // ========================================================
+    // ŞEHİR CADDESİ (Asfalt, Kaldırımlar, Binalar, Sokak Lambaları)
+    // ========================================================
+    const streetWidth = 14;
+    const road = new THREE.Mesh(
+      new THREE.PlaneGeometry(streetWidth, 300),
+      new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.2, metalness: 0.1 })
+    );
+    road.rotation.x = -Math.PI / 2;
+    road.position.z = -80;
+    scene.add(road);
+
+    // Kaldırımlar
+    const curbGeo = new THREE.BoxGeometry(2.5, 0.3, 300);
+    const curbMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.8 });
+    const curbL = new THREE.Mesh(curbGeo, curbMat);
+    curbL.position.set(-8.25, 0.15, -80);
+    scene.add(curbL);
+
+    const curbR = new THREE.Mesh(curbGeo, curbMat);
+    curbR.position.set(8.25, 0.15, -80);
+    scene.add(curbR);
+
+    // Şehir Binaları (Sol ve Sağ Sıra)
+    const buildings = [];
+    const bldColors = [0x111827, 0x1e293b, 0x0f172a];
+
+    for (let i = 0; i < 18; i++) {
+      const h = 12 + Math.random() * 16;
+      const w = 7 + Math.random() * 4;
+      const d = 10 + Math.random() * 4;
+      const bGeo = new THREE.BoxGeometry(w, h, d);
+      const bMat = new THREE.MeshStandardMaterial({ color: bldColors[i % 3], roughness: 0.7 });
+
+      // Sol Bina
+      const bL = new THREE.Mesh(bGeo, bMat);
+      bL.position.set(-14, h / 2, -i * 18);
+      scene.add(bL);
+      buildings.push(bL);
+
+      // Sağ Bina
+      const bR = new THREE.Mesh(bGeo, bMat);
+      bR.position.set(14, h / 2, -i * 18);
+      scene.add(bR);
+      buildings.push(bR);
+    }
+
+    // Akan Yol Çizgileri
+    const stripes = [];
+    const stripeGeo = new THREE.PlaneGeometry(0.2, 3.5);
+    const stripeMat = new THREE.MeshBasicMaterial({ color: 0xfacc15 });
+    for (let i = 0; i < 20; i++) {
+      const s = new THREE.Mesh(stripeGeo, stripeMat);
+      s.rotation.x = -Math.PI / 2;
+      s.position.set(0, 0.02, -i * 12);
+      scene.add(s);
+      stripes.push(s);
+    }
+
+    // 3D Yağmur Partikülleri
+    const rainCount = 1800;
+    const rainGeo = new THREE.BufferGeometry();
+    const rainPos = new Float32Array(rainCount * 3);
+    for (let i = 0; i < rainCount * 3; i += 3) {
+      rainPos[i] = (Math.random() - 0.5) * 35;
+      rainPos[i + 1] = Math.random() * 14;
+      rainPos[i + 2] = -Math.random() * 70;
+    }
+    rainGeo.setAttribute('position', new THREE.BufferAttribute(rainPos, 3));
+    const rainField = new THREE.Points(rainGeo, new THREE.PointsMaterial({ color: 0x94a3b8, size: 0.07, transparent: true, opacity: 0.65 }));
+    scene.add(rainField);
+
+    // ========================================================
+    // 3D KOKPİT DONANIMI: DİREKSİYON, VİTES, KONSOL, SÜTUNLAR
+    // ========================================================
+    const cockpit = new THREE.Group();
+    const leatherMat = new THREE.MeshStandardMaterial({ color: 0x090d16, roughness: 0.85 });
+    const trimMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.8, roughness: 0.3 });
+
+    // Ön Konsol Göğsü
+    const dash = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.45, 1.1), leatherMat);
+    dash.position.set(0, 0.78, 0.05);
+    cockpit.add(dash);
+
+    // Orta Konsol & Vites Tüneli (Transmission Tunnel)
+    const tunnel = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.4, 1.2), leatherMat);
+    tunnel.position.set(0, 0.55, 0.6);
+    cockpit.add(tunnel);
+
+    // Vites Kolu (Gear Shifter)
+    const shifterBase = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.05, 0.22), trimMat);
+    shifterBase.position.set(0, 0.76, 0.5);
+    cockpit.add(shifterBase);
+
+    const shifterStick = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.12, 12), trimMat);
+    shifterStick.position.set(0, 0.82, 0.5);
+    cockpit.add(shifterStick);
+
+    const shifterKnob = new THREE.Mesh(new THREE.SphereGeometry(0.03, 16, 16), leatherMat);
+    shifterKnob.position.set(0, 0.88, 0.5);
+    cockpit.add(shifterKnob);
+
+    // A-Sütunları
+    const pGeo = new THREE.BoxGeometry(0.12, 1.5, 0.15);
+    const pL = new THREE.Mesh(pGeo, leatherMat);
+    pL.position.set(-1.12, 1.45, -0.05); pL.rotation.z = -0.32; pL.rotation.x = -0.4;
+    cockpit.add(pL);
+
+    const pR = new THREE.Mesh(pGeo, leatherMat);
+    pR.position.set(1.12, 1.45, -0.05); pR.rotation.z = 0.32; pR.rotation.x = -0.4;
+    cockpit.add(pR);
+
+    // 3D SPOR DERİ DİREKSİYON (Tam sürücünün önüne yerleştirildi)
+    const steerPivot = new THREE.Group();
+    steerPivot.position.set(-0.42, 0.98, 0.22);
+    steerPivot.rotation.x = -Math.PI / 4.8;
+
+    const wheelRim = new THREE.Mesh(
+      new THREE.TorusGeometry(0.23, 0.025, 16, 48),
+      new THREE.MeshStandardMaterial({ color: 0x111827, roughness: 0.6 })
+    );
+    steerPivot.add(wheelRim);
+
+    // Direksiyon Kolları
+    const spoke = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.035, 0.02), trimMat);
+    steerPivot.add(spoke);
+
+    const spokeB = new THREE.Mesh(new THREE.BoxGeometry(0.035, 0.18, 0.02), trimMat);
+    spokeB.position.y = -0.09;
+    steerPivot.add(spokeB);
+
+    const hub = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.03, 24), new THREE.MeshStandardMaterial({ color: 0x0284c7 }));
+    hub.rotation.x = Math.PI / 2;
+    steerPivot.add(hub);
+
+    cockpit.add(steerPivot);
+    scene.add(cockpit);
+
+    // ========================================================
+    // ŞEHİR TRAFİĞİ: GERÇEKÇİ HIZLAR & GÜVENLİ TAKİP
+    // ========================================================
+    const traffic = [
+      { id: 'lead', x: -0.2, z: -18, speed: 45, w: 2.1, h: 1.4, d: 4.2, color: 0xdc2626, mesh: null, brake: null },
+      { id: 'taxi', x: 4.2, z: -34, speed: 50, w: 2.1, h: 1.4, d: 4.2, color: 0xf59e0b, mesh: null, brake: null },
+      { id: 'van', x: -4.2, z: -46, speed: 42, w: 2.4, h: 2.4, d: 5.5, color: 0x3b82f6, mesh: null, brake: null }
+    ];
+
+    traffic.forEach(t => {
+      const g = new THREE.Group();
+      const body = new THREE.Mesh(new THREE.BoxGeometry(t.w, t.h, t.d), new THREE.MeshStandardMaterial({ color: t.color }));
+      body.position.y = t.h / 2;
+      g.add(body);
+
+      // Kırmızı Arka Stoplar
+      const lMat = new THREE.MeshBasicMaterial({ color: 0x7f0000 });
+      const bL = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.12, 0.08), lMat);
+      bL.position.set(-t.w / 2 + 0.3, t.h * 0.55, t.d / 2 + 0.04);
+      const bR = bL.clone();
+      bR.position.x = t.w / 2 - 0.3;
+      g.add(bL);
+      g.add(bR);
+      t.brake = [bL, bR];
+
+      g.position.set(t.x, 0, t.z);
+      scene.add(g);
+      t.mesh = g;
+    });
+
+    // ========================================================
+    // 2. ÖN CAM YAĞMUR & GERÇEKÇİ SİLECEK (Dengeli Salınım)
+    // ========================================================
+    const rainCanvas = document.getElementById('rainCanvas');
+    const rCtx = rainCanvas.getContext('2d');
+    let drops = [];
+    let wiperProgress = 0; // 0..1 döngü
+
+    function resizeRain() {
+      rainCanvas.width = window.innerWidth;
+      rainCanvas.height = window.innerHeight;
+    }
+    resizeRain();
+
+    for (let i = 0; i < 90; i++) {
+      drops.push({
+        x: Math.random() * rainCanvas.width,
+        y: Math.random() * rainCanvas.height,
+        r: Math.random() * 2.0 + 1.0,
+        speed: Math.random() * 2.5 + 1.5
+      });
+    }
+
+    function renderWindshield(delta) {
+      rCtx.clearRect(0, 0, rainCanvas.width, rainCanvas.height);
+
+      // Yağmur Damlaları (Yavaş ve doğal akış)
+      rCtx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+      drops.forEach(d => {
+        d.y += d.speed;
+        if (d.y > rainCanvas.height) {
+          d.y = -10;
+          d.x = Math.random() * rainCanvas.width;
+        }
+        rCtx.beginPath();
+        rCtx.arc(d.x, d.y, d.r, 0, Math.PI * 2);
+        rCtx.fill();
+      });
+
+      // Silecek: Saniyede ~1.2 periyot (Doğal Araba Sileceği)
+      wiperProgress += delta * 1.8;
+      const angle = (Math.sin(wiperProgress) * 0.5 + 0.5) * 1.35; // 0..1.35 radyan
+
+      const wX = rainCanvas.width * 0.42;
+      const wY = rainCanvas.height - 210;
+      const armLen = 330;
+
+      rCtx.save();
+      rCtx.translate(wX, wY);
+      rCtx.rotate(-angle);
+      rCtx.strokeStyle = '#1e293b';
+      rCtx.lineWidth = 5;
+      rCtx.beginPath();
+      rCtx.moveTo(0, 0);
+      rCtx.lineTo(0, -armLen);
+      rCtx.stroke();
+
+      rCtx.strokeStyle = '#090d16';
+      rCtx.lineWidth = 3;
+      rCtx.beginPath();
+      rCtx.moveTo(-30, -armLen * 0.7);
+      rCtx.lineTo(25, -armLen);
+      rCtx.stroke();
+      rCtx.restore();
+    }
+
+    // ========================================================
+    // 3. SOL HUD: LIDAR NOKTA BULUTU MOTORU
+    // ========================================================
+    const lidarCanvas = document.getElementById('lidarCanvas');
+    const lCtx = lidarCanvas.getContext('2d');
+
+    function renderLidar() {
+      lidarCanvas.width = lidarCanvas.clientWidth;
+      lidarCanvas.height = lidarCanvas.clientHeight;
+      const w = lidarCanvas.width, h = lidarCanvas.height;
+
+      lCtx.fillStyle = '#030811';
+      lCtx.fillRect(0, 0, w, h);
+
+      // Kılavuzlar
+      lCtx.strokeStyle = 'rgba(0, 242, 254, 0.15)';
+      lCtx.lineWidth = 1;
+      for (let r = 25; r < h; r += 26) {
+        lCtx.beginPath();
+        lCtx.arc(w / 2, h - 8, r, Math.PI, 0);
+        lCtx.stroke();
+      }
+
+      // Kendi Aracımız
+      lCtx.fillStyle = '#00f2fe';
+      lCtx.fillRect(w / 2 - 8, h - 16, 16, 12);
+
+      // Binaların Yansıması (LiDAR sokak duvarlarını görür)
+      lCtx.fillStyle = 'rgba(0, 242, 254, 0.25)';
+      for (let by = 20; by < h - 20; by += 8) {
+        lCtx.fillRect(20 + Math.random() * 10, by, 1.5, 1.5);
+        lCtx.fillRect(w - 30 + Math.random() * 10, by, 1.5, 1.5);
+      }
+
+      // Araç Nokta Bulutu (Maks. ~30 metre menzil, ötesi siste kaybolur)
+      traffic.forEach(t => {
+        const dist = Math.abs(t.z);
+        if (dist < 32) {
+          const sx = w / 2 + (t.x * 20);
+          const sy = h - 16 - (dist * 5.2);
+          const count = Math.floor(45 - dist * 1.1);
+
+          for (let p = 0; p < count; p++) {
+            const px = sx + (Math.random() - 0.5) * (t.w * 18);
+            const py = sy + (Math.random() - 0.5) * (t.d * 4);
+            lCtx.fillStyle = dist < 22 ? '#00f2fe' : '#f59e0b';
+            lCtx.beginPath();
+            lCtx.arc(px, py, 1.2, 0, Math.PI * 2);
+            lCtx.fill();
+          }
+        }
+      });
+    }
+
+    // ========================================================
+    // 4. SAĞ HUD: RADAR (77 GHz Doppler) MOTORU
+    // ========================================================
+    const radarCanvas = document.getElementById('radarCanvas');
+    const radCtx = radarCanvas.getContext('2d');
+    let radarSweep = 0;
+
+    function renderRadar() {
+      radarCanvas.width = radarCanvas.clientWidth;
+      radarCanvas.height = radarCanvas.clientHeight;
+      const w = radarCanvas.width, h = radarCanvas.height;
+
+      radCtx.fillStyle = '#020d0a';
+      radCtx.fillRect(0, 0, w, h);
+
+      // Kılavuzlar
+      radCtx.strokeStyle = 'rgba(16, 185, 129, 0.2)';
+      for (let r = 30; r < h; r += 30) {
+        radCtx.beginPath();
+        radCtx.arc(w / 2, h - 8, r, Math.PI, 0);
+        radCtx.stroke();
+      }
+
+      // Tarama Çizgisi
+      radarSweep += 0.04;
+      const sx = w / 2 + Math.cos(radarSweep) * (w / 2);
+      const sy = (h - 8) - Math.abs(Math.sin(radarSweep)) * (h - 15);
+      radCtx.strokeStyle = 'rgba(16, 185, 129, 0.4)';
+      radCtx.beginPath(); radCtx.moveTo(w / 2, h - 8); radCtx.lineTo(sx, sy); radCtx.stroke();
+
+      radCtx.fillStyle = '#10b981';
+      radCtx.fillRect(w / 2 - 7, h - 16, 14, 12);
+
+      // Radar binaları filtreler; doğrudan araç hedeflerini Doppler ile kutular
+      traffic.forEach(t => {
+        const dist = Math.abs(t.z);
+        const scrX = w / 2 + (t.x * 18);
+        const scrY = h - 16 - (dist * 2.8);
+
+        radCtx.strokeStyle = dist < 20 ? '#ef4444' : '#10b981';
+        radCtx.lineWidth = 1.6;
+        radCtx.strokeRect(scrX - 12, scrY - 8, 24, 16);
+
+        radCtx.fillStyle = '#34d399';
+        radCtx.beginPath(); radCtx.arc(scrX, scrY, 2.5, 0, Math.PI * 2); radCtx.fill();
+
+        // Doppler Hızı
+        radCtx.fillStyle = '#94a3b8';
+        radCtx.font = '9px Fira Code';
+        radCtx.fillText(`${dist.toFixed(0)}m | ${t.speed}km/s`, scrX - 20, scrY - 10);
+      });
+    }
+
+    // ========================================================
+    // OTONOM FİZİK & ŞANZIMAN DEVİR SENKRONU
+    // ========================================================
+    let currentSpeed = 48; // km/s (Şehir içi normal hız)
+    let rpm = 1950;
+    let gear = 'D3';
+    let lastTime = performance.now();
+
+    function animate(now) {
+      requestAnimationFrame(animate);
+      const delta = (now - lastTime) / 1000;
+      lastTime = now;
+
+      // 1. Öndeki Aracı Takip Etme Mantığı (Asla İçine Girmez)
+      const lead = traffic[0];
+      const distToLead = Math.abs(lead.z);
+
+      if (distToLead < 16) {
+        // Yavaşla & Fren Lambalarını Yak
+        currentSpeed += (lead.speed - currentSpeed) * 0.04;
+        lead.brake.forEach(l => l.material.color.setHex(0xff0000));
+      } else {
+        // Normal Şehir Hızına Dön (~48 km/s)
+        currentSpeed += (48 - currentSpeed) * 0.02;
+        lead.brake.forEach(l => l.material.color.setHex(0x7f0000));
+      }
+
+      // 2. Vites & Devir (RPM) Simülasyonu
+      if (currentSpeed < 20) {
+        gear = 'D1';
+        rpm = 1200 + (currentSpeed / 20) * 1600;
+      } else if (currentSpeed < 38) {
+        gear = 'D2';
+        rpm = 1400 + ((currentSpeed - 20) / 18) * 1400;
+      } else {
+        gear = 'D3';
+        rpm = 1600 + ((currentSpeed - 38) / 30) * 1200;
+      }
+
+      document.getElementById('speedNum').innerText = Math.round(currentSpeed);
+      document.getElementById('gearIndicator').innerText = gear;
+      document.getElementById('rpmNum').innerText = Math.round(rpm);
+      document.getElementById('rpmFill').style.width = `${(rpm / 5000) * 100}%`;
+
+      // 3. Yolun ve Binaların Akışı (Şehir Hızı: 48 km/s -> ~0.45 birim/frame)
+      const cityStep = (currentSpeed / 50) * 0.42;
+
+      stripes.forEach(s => {
+        s.position.z += cityStep;
+        if (s.position.z > 5) s.position.z = -12 * 20 + 5;
+      });
+
+      buildings.forEach(b => {
+        b.position.z += cityStep;
+        if (b.position.z > 15) b.position.z = -18 * 18 + 15;
+      });
+
+      // Yağmur Parçacıkları
+      const p = rainGeo.attributes.position.array;
+      for (let i = 1; i < rainCount * 3; i += 3) {
+        p[i] -= 0.35;
+        if (p[i] < 0) p[i] = 14;
+      }
+      rainGeo.attributes.position.needsUpdate = true;
+
+      // 4. Trafik Bağıl Hareketi
+      traffic.forEach(t => {
+        const deltaV = (t.speed - currentSpeed) * 0.012;
+        t.z += deltaV;
+        if (t.z > 8) t.z = -60;
+        if (t.z < -65) t.z = -14;
+        t.mesh.position.set(t.x, 0, t.z);
+      });
+
+      // 5. Direksiyonun Yola Göre Doğal Açısı
+      const steerWiggle = Math.sin(now * 0.002) * 0.035;
+      steerPivot.rotation.z = steerWiggle;
+
+      // Render İşlemleri
+      renderer.render(scene, camera);
+      renderWindshield(delta);
+      renderLidar();
+      renderRadar();
+    }
+
+    animate(performance.now());
+
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      resizeRain();
+    });
+  </script>
+</body>
+</html>
