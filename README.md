@@ -8,7 +8,7 @@
 <a href="https://otonom-kokpit-lidar-radar-simulasyo.vercel.app/" target="_blank">
   <img src="https://img.shields.io/badge/CANLI_DEMO-Vercel-000000?style=for-the-badge&logo=vercel&logoColor=00f2fe" alt="Vercel Live Demo" height="38"/>
 </a>
-<a href="https://www.linkedin.com/in/batuhanbayatli" target="_blank">
+<a href="https://www.linkedin.com/in/batuhanbayatlı" target="_blank">
   <img src="https://img.shields.io/badge/LINKEDIN-Profil-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white" alt="LinkedIn" height="38"/>
 </a>
 
