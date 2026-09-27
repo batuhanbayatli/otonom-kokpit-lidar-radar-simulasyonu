@@ -75,7 +75,7 @@
 Proje herhangi bir derleme adımı (build step) veya harici paket yüklemesi gerektirmez:
 
 1. Depoyu klonlayın:
-   git clone https://github.com/BatuhanBayatli/otonom-kokpit-lidar-radar-simulasyo.git
+   git clone [https://github.com/BatuhanBayatli/otonom-kokpit-lidar-radar-simulasyo.git](https://github.com/batuhanbayatli/otonom-kokpit-lidar-radar-simulasyonu)
 
 2. Proje dizinine gidin:
    cd otonom-kokpit-lidar-radar-simulasyo
