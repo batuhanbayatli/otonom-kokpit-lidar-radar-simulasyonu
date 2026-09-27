@@ -5,23 +5,23 @@
 
 <br/>
 
-<a href="[https://otonom-kokpit-lidar-radar-simulasyo.vercel.app/](https://otonom-kokpit-lidar-radar-simulasyo.vercel.app/)" target="_blank">
-  <img src="[https://img.shields.io/badge/CANLI_SİMÜLASYONU_DENE-000000?style=for-the-badge&logo=vercel&logoColor=00f2fe&labelColor=0d1117](https://img.shields.io/badge/CANLI_SİMÜLASYONU_DENE-000000?style=for-the-badge&logo=vercel&logoColor=00f2fe&labelColor=0d1117)" alt="Vercel Live Demo" height="40"/>
+<a href="https://otonom-kokpit-lidar-radar-simulasyo.vercel.app/" target="_blank">
+  <img src="https://img.shields.io/badge/CANLI_DEMO-Vercel-000000?style=for-the-badge&logo=vercel&logoColor=00f2fe" alt="Vercel Live Demo" height="38"/>
 </a>
-<a href="[https://www.linkedin.com/in/batuhanbayatlı](https://www.linkedin.com/in/batuhanbayatlı)" target="_blank">
-  <img src="[https://img.shields.io/badge/LINKEDIN_PROFİLİ-0077B5?style=for-the-badge&logo=linkedin&logoColor=white&labelColor=0a4066](https://img.shields.io/badge/LINKEDIN_PROFİLİ-0077B5?style=for-the-badge&logo=linkedin&logoColor=white&labelColor=0a4066)" alt="LinkedIn" height="40"/>
+<a href="https://www.linkedin.com/in/batuhanbayatli" target="_blank">
+  <img src="https://img.shields.io/badge/LINKEDIN-Profil-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white" alt="LinkedIn" height="38"/>
 </a>
 
 <br/><br/>
 
 <!-- TEKNOLOJİ ROZETLERİ -->
-![](https://img.shields.io/badge/Motor-Three.js_r128-black?style=flat-square&logo=three.js&logoColor=00ffcc)
-![](https://img.shields.io/badge/Grafik-WebGL_2.0-red?style=flat-square&logo=webgl&logoColor=white)
-![](https://img.shields.io/badge/Perspektif-3B_Sürücü_Koltuğu_(POV)-blue?style=flat-square&logo=speedtest&logoColor=white)
-![](https://img.shields.io/badge/Mimari-Sıfır_Kurulum_Saf_JS-yellow?style=flat-square&logo=javascript&logoColor=black)
-![](https://img.shields.io/badge/Lisans-MIT-emerald?style=flat-square)
+<img src="https://img.shields.io/badge/Motor-Three.js_r128-black?style=flat-square&logo=three.js&logoColor=00ffcc" alt="Three.js"/>
+<img src="https://img.shields.io/badge/Grafik-WebGL_2.0-red?style=flat-square&logo=webgl&logoColor=white" alt="WebGL"/>
+<img src="https://img.shields.io/badge/Perspektif-3B_Sürücü_POV-blue?style=flat-square" alt="POV"/>
+<img src="https://img.shields.io/badge/Mimari-Sıfır_Kurulum_Saf_JS-yellow?style=flat-square&logo=javascript&logoColor=black" alt="JS"/>
+<img src="https://img.shields.io/badge/Lisans-MIT-emerald?style=flat-square" alt="License"/>
 
-<br/>
+<br/><br/>
 
 > 🎯 **Otonom araçların dünyayı nasıl algıladığını doğrudan direksiyon başından deneyimleyin!**  
 > Yağmurlu ve sisli bir şehir bulvarında, gerçekçi trafik akışında LiDAR'ın optik sınırları ile RADAR'ın sis delici Doppler yeteneğini yan yana inceleyin.
@@ -92,11 +92,11 @@ Doğrudan tarayıcıda canlı denemek için:
 <div align="center">
   <b>BATUHAN BAYATLI</b><br/>
   
-  <a href="[https://www.linkedin.com/in/batuhanbayatlı](https://www.linkedin.com/in/batuhanbayatlı)" target="_blank">
-    <img src="[https://img.shields.io/badge/LinkedIn-Bağlantı_Kur-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white](https://img.shields.io/badge/LinkedIn-Bağlantı_Kur-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white)"/>
+  <a href="https://www.linkedin.com/in/batuhanbayatli" target="_blank">
+    <img src="https://img.shields.io/badge/LinkedIn-Bağlantı_Kur-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white" alt="LinkedIn"/>
   </a>
-  <a href="[https://otonom-kokpit-lidar-radar-simulasyo.vercel.app/](https://otonom-kokpit-lidar-radar-simulasyo.vercel.app/)" target="_blank">
-    <img src="[https://img.shields.io/badge/Canlı_Demo-Vercel-black?style=for-the-badge&logo=vercel&logoColor=white](https://img.shields.io/badge/Canlı_Demo-Vercel-black?style=for-the-badge&logo=vercel&logoColor=white)"/>
+  <a href="https://otonom-kokpit-lidar-radar-simulasyo.vercel.app/" target="_blank">
+    <img src="https://img.shields.io/badge/Canlı_Demo-Vercel-black?style=for-the-badge&logo=vercel&logoColor=white" alt="Vercel"/>
   </a>
   <br/><br/>
   <sub>MIT Lisansı ile korunmaktadır. © 2026 Batuhan Bayatlı.</sub>
